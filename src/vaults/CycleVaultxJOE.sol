@@ -2,28 +2,21 @@
 
 pragma solidity ^0.8.13;
 
-import "openzeppelin-contracts/utils/Context.sol";
 import "openzeppelin-contracts/interfaces/IERC20.sol";
 import "openzeppelin-contracts/utils/Address.sol";
 import "openzeppelin-contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-contracts/token/ERC20/utils/SafeERC20.sol";
-import "openzeppelin-contracts/utils/math/Math.sol";
 import "openzeppelin-contracts/security/ReentrancyGuard.sol";
 import "openzeppelin-contracts/security/Pausable.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 
 import "../libs/SafeMath.sol";
 import "../libs/AMMLibrary.sol";
-import "../interfaces/IMasterChef.sol";
 import "../interfaces/IRouter.sol";
-import "../interfaces/IProtocolAddresses.sol";
-import "../interfaces/IPair.sol";
 import "../interfaces/IStrategyVariables.sol";
 import "../interfaces/IWAVAX.sol";
-import "../interfaces/IHarvestProcessor.sol";
-import "../interfaces/IStakingRewards.sol";
 import "../interfaces/IVaultRewards.sol";
-import "../interfaces/IStrategy.sol";
+import "../interfaces/IProtocolAddresses.sol";
 import "../interfaces/IJoeBar.sol";
 import "../interfaces/IMasterChefV2.sol";
 
