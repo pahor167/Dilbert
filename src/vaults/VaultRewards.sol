@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
 import "openzeppelin-contracts/interfaces/IERC20.sol";
 import "openzeppelin-contracts/token/ERC20/ERC20.sol";
@@ -10,7 +10,6 @@ import "openzeppelin-contracts/security/ReentrancyGuard.sol";
 import "openzeppelin-contracts/security/Pausable.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 
-import "../libs/SafeMath.sol";
 import "../interfaces/IProtocolAddresses.sol";
 
 /**
@@ -25,7 +24,6 @@ import "../interfaces/IProtocolAddresses.sol";
  * - The owner has access to permissioned operations
  */
 contract VaultRewards is ReentrancyGuard, Pausable, Ownable {
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     /* ========== STATE VARIABLES ========== */
@@ -75,17 +73,17 @@ contract VaultRewards is ReentrancyGuard, Pausable, Ownable {
             return rewardPerTokenStored;
         }
         return
-            rewardPerTokenStored.add(
-                lastTimeRewardApplicable().sub(lastUpdateTime).mul(rewardRate).mul(1e18).div(_totalSupply)
+            rewardPerTokenStored + (
+                lastTimeRewardApplicable() - (lastUpdateTime) * (rewardRate) * (1e18) / (_totalSupply)
             );
     }
 
     function earned(address account) public view returns (uint256) {
-        return _balances[account].mul(rewardPerToken().sub(userRewardPerTokenPaid[account])).div(1e18).add(rewards[account]);
+        return _balances[account] * (rewardPerToken() - (userRewardPerTokenPaid[account])) / (1e18) + (rewards[account]);
     }
 
     function getRewardForDuration() external view returns (uint256) {
-        return rewardRate.mul(rewardsDuration);
+        return rewardRate * (rewardsDuration);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -93,8 +91,8 @@ contract VaultRewards is ReentrancyGuard, Pausable, Ownable {
     // Only the associated vault contract will stake shares
     function stakeFromVault(uint256 amount, address account) external nonReentrant onlyVault updateReward(account) {
         require(amount > 0, "Cannot stake 0");
-        _totalSupply = _totalSupply.add(amount);
-        _balances[account] = _balances[account].add(amount);
+        _totalSupply = _totalSupply + (amount);
+        _balances[account] = _balances[account] + (amount);
         stakingToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(account, amount);
     }
@@ -102,8 +100,8 @@ contract VaultRewards is ReentrancyGuard, Pausable, Ownable {
     // Only the associated vault contract will withdraw shares
     function withdrawToVault(uint256 amount, address account) public nonReentrant onlyVault updateReward(account) {
         require(amount > 0, "Cannot withdraw 0");
-        _totalSupply = _totalSupply.sub(amount);
-        _balances[account] = _balances[account].sub(amount);
+        _totalSupply = _totalSupply - (amount);
+        _balances[account] = _balances[account] - (amount);
         stakingToken.safeTransfer(msg.sender, amount);
         emit Withdrawn(account, amount);
     }
@@ -121,11 +119,11 @@ contract VaultRewards is ReentrancyGuard, Pausable, Ownable {
 
     function notifyRewardAmount(uint256 reward) external onlyDistributor updateReward(address(0)) {
         if (block.timestamp >= periodFinish) {
-            rewardRate = reward.div(rewardsDuration);
+            rewardRate = reward / (rewardsDuration);
         } else {
-            uint256 remaining = periodFinish.sub(block.timestamp);
-            uint256 leftover = remaining.mul(rewardRate);
-            rewardRate = reward.add(leftover).div(rewardsDuration);
+            uint256 remaining = periodFinish - (block.timestamp);
+            uint256 leftover = remaining * (rewardRate);
+            rewardRate = reward + (leftover) / (rewardsDuration);
         }
 
         // Ensure the provided reward amount is not more than the balance in the contract.
@@ -133,10 +131,10 @@ contract VaultRewards is ReentrancyGuard, Pausable, Ownable {
         // very high values of rewardRate in the earned and rewardsPerToken functions;
         // Reward + leftover must be less than 2^256 / 10^18 to avoid overflow.
         uint balance = rewardsToken.balanceOf(address(this));
-        require(rewardRate <= balance.div(rewardsDuration), "Provided reward too high");
+        require(rewardRate <= balance / (rewardsDuration), "Provided reward too high");
 
         lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp.add(rewardsDuration);
+        periodFinish = block.timestamp + (rewardsDuration);
         emit RewardAdded(reward);
     }
 

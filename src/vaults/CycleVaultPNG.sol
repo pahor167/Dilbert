@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
 import "openzeppelin-contracts/interfaces/IERC20.sol";
 import "openzeppelin-contracts/utils/Address.sol";
@@ -10,7 +10,6 @@ import "openzeppelin-contracts/security/ReentrancyGuard.sol";
 import "openzeppelin-contracts/security/Pausable.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 
-import "../libs/SafeMath.sol";
 import "../libs/AMMLibrary.sol";
 import "../interfaces/IRouter.sol";
 import "../interfaces/IProtocolAddresses.sol";
@@ -25,7 +24,6 @@ import "../interfaces/IVaultRewards.sol";
  */
 contract CycleVaultPNG is ERC20, ReentrancyGuard, Ownable, Pausable {
     using SafeERC20 for IERC20;
-    using SafeMath for uint256;
 
     address public constant PNG = address(0x60781C2586D68229fde47564546784ab3fACA982);
     address public constant WAVAX = address(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7);
@@ -95,7 +93,7 @@ contract CycleVaultPNG is ERC20, ReentrancyGuard, Ownable, Pausable {
     }
 
     function balancePNGinSystem() public view returns (uint256) {
-        return balancePNG().add(balancePNGinStakingRewards());
+        return balancePNG() + (balancePNGinStakingRewards());
     }
 
     function balanceLPinSystem() external view returns (uint256) { // Standard interface
@@ -112,7 +110,7 @@ contract CycleVaultPNG is ERC20, ReentrancyGuard, Ownable, Pausable {
     }
 
     function getPNGamountForShares(uint256 shares) public view returns (uint256) {
-        return totalSupply() == 0 ? 1e18 : balancePNGinSystem().mul(shares).div(totalSupply());
+        return totalSupply() == 0 ? 1e18 : balancePNGinSystem() * (shares) / (totalSupply());
     }
 
     function getLPamountForShares(uint256 shares) external view returns (uint256) { // Standard interface
@@ -183,7 +181,7 @@ contract CycleVaultPNG is ERC20, ReentrancyGuard, Ownable, Pausable {
         if (totalSupply() == 0) {
             shares = amount;
         } else {
-            shares = (amount.mul(totalSupply())).div(systemBalance);
+            shares = (amount * (totalSupply())) / (systemBalance);
         }
 
         _mint(address(this), shares);
@@ -236,7 +234,7 @@ contract CycleVaultPNG is ERC20, ReentrancyGuard, Ownable, Pausable {
 
         uint256 balancePNGinVault = balancePNG();
         if (balancePNGinVault < amountPNGforWithdraw) {
-            uint256 amountPNGtoWithdrawFromSR = amountPNGforWithdraw.sub(balancePNGinVault);
+            uint256 amountPNGtoWithdrawFromSR = amountPNGforWithdraw - (balancePNGinVault);
             IStakingRewards(StakingRewards).withdraw(amountPNGtoWithdrawFromSR);
         }
     }
@@ -260,12 +258,12 @@ contract CycleVaultPNG is ERC20, ReentrancyGuard, Ownable, Pausable {
     function _processFees() internal {
         uint256 reinvestBP = IStrategyVariables(StrategyVariables).harvestFeeBasisPoints();
         uint256 kickbackBP = IStrategyVariables(StrategyVariables).callFeeBasisPoints();
-        uint256 totalFeeBP = reinvestBP.add(kickbackBP);
+        uint256 totalFeeBP = reinvestBP + (kickbackBP);
 
-        uint256 amountWAVAXforFees = balanceWAVAX().mul(totalFeeBP).div(BP_DIV);
+        uint256 amountWAVAXforFees = balanceWAVAX() * (totalFeeBP) / (BP_DIV);
 
-        uint256 WAVAXforProcessor = amountWAVAXforFees.mul(reinvestBP).div(totalFeeBP);
-        uint256 WAVAXforCaller = amountWAVAXforFees.sub(WAVAXforProcessor);
+        uint256 WAVAXforProcessor = amountWAVAXforFees * (reinvestBP) / (totalFeeBP);
+        uint256 WAVAXforCaller = amountWAVAXforFees - (WAVAXforProcessor);
 
         address Processor = IProtocolAddresses(ProtocolAddresses).HarvestProcessor();
         IERC20(WAVAX).safeTransfer(Processor, WAVAXforProcessor);

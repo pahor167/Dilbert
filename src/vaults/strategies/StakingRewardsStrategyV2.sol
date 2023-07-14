@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
 import "openzeppelin-contracts/interfaces/IERC20.sol";
 import "openzeppelin-contracts/utils/Address.sol";
@@ -9,7 +9,6 @@ import "openzeppelin-contracts/security/ReentrancyGuard.sol";
 import "openzeppelin-contracts/security/Pausable.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 
-import "../../libs/SafeMath.sol";
 import "../../interfaces/IRouter.sol";
 import "../../interfaces/IProtocolAddresses.sol";
 import "../../interfaces/IPair.sol";
@@ -22,7 +21,6 @@ import "../../interfaces/IStakingRewards.sol";
  */
 contract StakingRewardsStrategyV2 is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
-    using SafeMath for uint256;
     
     address public constant WAVAX = address(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7);
 
@@ -112,7 +110,7 @@ contract StakingRewardsStrategyV2 is Ownable, Pausable, ReentrancyGuard {
     }
 
     function balanceLPinStrategy() external view returns (uint256) {
-        return balanceLP().add(stakingRewardsBalanceLP());
+        return balanceLP() + (stakingRewardsBalanceLP());
     }
 
     function balanceRewardToken() public view returns (uint256) {
@@ -142,7 +140,7 @@ contract StakingRewardsStrategyV2 is Ownable, Pausable, ReentrancyGuard {
         uint256 balance = balanceLP();
 
         if (balance < amount) {
-            IStakingRewards(StakingRewards).withdraw(amount.sub(balance));
+            IStakingRewards(StakingRewards).withdraw(amount - (balance));
             balance = balanceLP();
         }
 
@@ -170,16 +168,16 @@ contract StakingRewardsStrategyV2 is Ownable, Pausable, ReentrancyGuard {
     function _processFees(uint256 harvestAmount) internal {
         uint256 harvestFeeBasisPoints = IStrategyVariables(StrategyVariables).harvestFeeBasisPoints();
         uint256 callFeeBasisPoints = IStrategyVariables(StrategyVariables).callFeeBasisPoints();
-        uint256 totalFeeBasisPoints = harvestFeeBasisPoints.add(callFeeBasisPoints);
+        uint256 totalFeeBasisPoints = harvestFeeBasisPoints + (callFeeBasisPoints);
 
-        uint256 harvestAmountFee = harvestAmount.mul(totalFeeBasisPoints).div(BASIS_POINT_DIVISOR);
+        uint256 harvestAmountFee = harvestAmount * (totalFeeBasisPoints) / (BASIS_POINT_DIVISOR);
 
         IRouter(Router).swapExactTokensForTokens(harvestAmountFee, 0, RewardTokenToWAVAXpath, address(this), block.timestamp + 120);
 
         uint256 balanceWAVAX = IERC20(WAVAX).balanceOf(address(this));
 
-        uint256 WAVAXforProcessor = balanceWAVAX.mul(harvestFeeBasisPoints).div(totalFeeBasisPoints);
-        uint256 WAVAXforCaller = balanceWAVAX.sub(WAVAXforProcessor);
+        uint256 WAVAXforProcessor = balanceWAVAX * (harvestFeeBasisPoints) / (totalFeeBasisPoints);
+        uint256 WAVAXforCaller = balanceWAVAX - (WAVAXforProcessor);
 
         address HarvestProcessor = IProtocolAddresses(ProtocolAddresses).HarvestProcessor();
         IERC20(WAVAX).safeTransfer(HarvestProcessor, WAVAXforProcessor);
@@ -190,7 +188,7 @@ contract StakingRewardsStrategyV2 is Ownable, Pausable, ReentrancyGuard {
     }
 
     function _addLiquidity() internal {
-        uint256 halfRewardToken = balanceRewardToken().div(2);
+        uint256 halfRewardToken = balanceRewardToken() / (2);
 
         if (Token0 != RewardToken) {
             IRouter(Router).swapExactTokensForTokens(halfRewardToken, 0, RewardTokenToToken0path, address(this), block.timestamp + 120);

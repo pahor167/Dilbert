@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
 import "openzeppelin-contracts/interfaces/IERC20.sol";
 import "openzeppelin-contracts/token/ERC20/utils/SafeERC20.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 
-import "./libs/SafeMath.sol";
 import "./interfaces/IWAVAX.sol";
 import "./interfaces/IStakingRewards.sol";
 import "./interfaces/ICycle.sol";
@@ -17,7 +16,6 @@ import "./interfaces/ICycle.sol";
  */
 contract ProcessorV5 is Ownable {
     using SafeERC20 for IERC20;
-    using SafeMath for uint256;
 
     address public constant CYCLE = address(0x81440C939f2C1E34fc7048E518a637205A632a74);
     address public constant WAVAX = address(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7);
@@ -105,7 +103,7 @@ contract ProcessorV5 is Ownable {
         }
 
         uint256 balWAVAX = balanceWAVAX();
-        uint256 teamFee = balWAVAX.mul(teamBP).div(BP_DIV);
+        uint256 teamFee = balWAVAX * (teamBP) / (BP_DIV);
         IERC20(WAVAX).safeTransfer(Team, teamFee);
         uint256 rewardAmount = balanceWAVAX();
         IERC20(WAVAX).safeTransfer(AVAXRewards, rewardAmount);

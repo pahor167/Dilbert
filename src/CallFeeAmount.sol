@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
-import "./libs/SafeMath.sol";
 import "./libs/AMMLibrary.sol";
 import "./interfaces/IStrategyVariables.sol";
 import "./interfaces/IWAVAX.sol";
@@ -14,7 +13,6 @@ import "./interfaces/IStrategy.sol";
  * @dev Deploy per exchange / Reward Token, set init code hash and Factory as required
  */
 contract CallFeeAmount {
-    using SafeMath for uint256;
 
     address public WAVAX = address(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7);
     address public RewardToken = address(0x60781C2586D68229fde47564546784ab3fACA982); // PNG
@@ -31,6 +29,6 @@ contract CallFeeAmount {
 
         uint256 callFeeBP = IStrategyVariables(StrategyVariables).callFeeBasisPoints();
 
-        return amountWAVAX.mul(callFeeBP).div(BP_DIVISOR);
+        return amountWAVAX * (callFeeBP) / (BP_DIVISOR);
     }
 }

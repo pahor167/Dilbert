@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
 
 import "openzeppelin-contracts/interfaces/IERC20.sol";
@@ -18,7 +18,7 @@ import "../interfaces/IVaultRewards.sol";
 import "../interfaces/IStrategy.sol";
 
 
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
 /**
  * @title Cycle Vault V3

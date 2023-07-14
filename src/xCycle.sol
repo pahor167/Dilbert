@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
 import "openzeppelin-contracts/interfaces/IERC20.sol";
 import "openzeppelin-contracts/utils/Address.sol";
@@ -10,7 +10,6 @@ import "openzeppelin-contracts/utils/math/Math.sol";
 import "openzeppelin-contracts/security/ReentrancyGuard.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 
-import "./libs/SafeMath.sol";
 import "./interfaces/IRouter.sol";
 import "./interfaces/IAVAXRewards.sol";
 import "./interfaces/ICycle.sol";
@@ -22,7 +21,6 @@ import "./interfaces/ICycle.sol";
  */
 contract xCycle is ERC20, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
-    using SafeMath for uint256;
 
     address public constant CYCLE = address(0x81440C939f2C1E34fc7048E518a637205A632a74);
     address public constant WAVAX = address(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7);
@@ -66,7 +64,7 @@ contract xCycle is ERC20, Ownable, ReentrancyGuard {
 
     function xCYCLEtoCYCLE(uint256 xCYCLEamount) public view returns (uint256) {
         uint256 xCYCLEsupply = totalSupply();
-        return xCYCLEsupply == 0 ? 0 : getStakedCYCLE().mul(xCYCLEamount).div(xCYCLEsupply);
+        return xCYCLEsupply == 0 ? 0 : getStakedCYCLE() * (xCYCLEamount) / (xCYCLEsupply);
     }
 
     function getAccountCYCLE(address account) external view returns (uint256) {
@@ -79,7 +77,7 @@ contract xCycle is ERC20, Ownable, ReentrancyGuard {
 
     function getKickbackAmount() external view returns (uint256) {
         uint256 rewardsEarned = IAVAXRewards(AVAXRewards).earned(address(this));
-        return rewardsEarned.mul(kickbackBP).div(BP_DIV);
+        return rewardsEarned * (kickbackBP) / (BP_DIV);
     }
 
     /**
@@ -93,7 +91,7 @@ contract xCycle is ERC20, Ownable, ReentrancyGuard {
 
         IERC20(CYCLE).safeTransferFrom(msg.sender, address(this), amountCYCLE);
 
-        xCYCLEtoMint = xCYCLEsupply == 0 ? amountCYCLE : amountCYCLE.mul(xCYCLEsupply).div(getStakedCYCLE());
+        xCYCLEtoMint = xCYCLEsupply == 0 ? amountCYCLE : amountCYCLE * (xCYCLEsupply) / (getStakedCYCLE());
 
         _mint(msg.sender, xCYCLEtoMint);
 
@@ -123,7 +121,7 @@ contract xCycle is ERC20, Ownable, ReentrancyGuard {
         IAVAXRewards(AVAXRewards).getReward();
 
         uint256 balanceAVAX = getBalanceAVAX();
-        uint256 kickbackAmount = balanceAVAX.mul(kickbackBP).div(BP_DIV);
+        uint256 kickbackAmount = balanceAVAX * (kickbackBP) / (BP_DIV);
         (bool success, ) = msg.sender.call{value: kickbackAmount}("");
         require(success, "xCycle: Unable to transfer AVAX");
 

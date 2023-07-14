@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
 import "openzeppelin-contracts/interfaces/IERC20.sol";
 import "openzeppelin-contracts/utils/Address.sol";
@@ -10,7 +10,6 @@ import "openzeppelin-contracts/security/ReentrancyGuard.sol";
 import "openzeppelin-contracts/security/Pausable.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 
-import "../libs/SafeMath.sol";
 import "../libs/AMMLibrary.sol";
 import "../interfaces/IRouter.sol";
 import "../interfaces/IStrategyVariables.sol";
@@ -26,7 +25,6 @@ import "../interfaces/IMasterChefV2.sol";
  */
 contract CycleVaultxJOE is ERC20, ReentrancyGuard, Ownable, Pausable {
     using SafeERC20 for IERC20;
-    using SafeMath for uint256;
 
     address public constant JOE = address(0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd);
     address public constant xJOE = address(0x57319d41F71E81F3c65F2a47CA4e001EbAFd4F33);
@@ -100,7 +98,7 @@ contract CycleVaultxJOE is ERC20, ReentrancyGuard, Ownable, Pausable {
     }
 
     function balancexJOEinSystem() public view returns (uint256) {
-        return balancexJOE().add(balancexJOEinMasterChef());
+        return balancexJOE() + (balancexJOEinMasterChef());
     }
 
     function balanceLPinSystem() external view returns (uint256) { // Standard interface
@@ -117,7 +115,7 @@ contract CycleVaultxJOE is ERC20, ReentrancyGuard, Ownable, Pausable {
     }
 
     function getxJOEamountForShares(uint256 shares) public view returns (uint256) {
-        return totalSupply() == 0 ? 1e18 : balancexJOEinSystem().mul(shares).div(totalSupply());
+        return totalSupply() == 0 ? 1e18 : balancexJOEinSystem() * (shares) / (totalSupply());
     }
 
     function getLPamountForShares(uint256 shares) external view returns (uint256) { // Standard interface
@@ -127,7 +125,7 @@ contract CycleVaultxJOE is ERC20, ReentrancyGuard, Ownable, Pausable {
     function xJOEtoJOE(uint256 amountxJOE) public view returns (uint256 amountJOE) {
         uint256 xJOEbalanceJOE = IERC20(JOE).balanceOf(xJOE);
         uint256 xJOEtotalSupply = IERC20(xJOE).totalSupply();
-        amountJOE = amountxJOE.mul(xJOEbalanceJOE).div(xJOEtotalSupply);
+        amountJOE = amountxJOE * (xJOEbalanceJOE) / (xJOEtotalSupply);
     } 
 
     function getAVAXquoteForxJOEamount(uint256 amountxJOE) public view returns (uint256 amountAVAX) {
@@ -154,7 +152,7 @@ contract CycleVaultxJOE is ERC20, ReentrancyGuard, Ownable, Pausable {
 
     function getRewardsEarned() external view returns (uint256) {
         (uint256 pendingRewards,,,) = IMasterChefV2(MasterChef).pendingTokens(poolID, address(this));
-        return pendingRewards.add(balanceJOE());
+        return pendingRewards + (balanceJOE());
     }
 
     /**
@@ -200,7 +198,7 @@ contract CycleVaultxJOE is ERC20, ReentrancyGuard, Ownable, Pausable {
         if (totalSupply() == 0) {
             shares = amount;
         } else {
-            shares = (amount.mul(totalSupply())).div(systemBalance);
+            shares = (amount * (totalSupply())) / (systemBalance);
         }
 
         _mint(address(this), shares);
@@ -222,7 +220,7 @@ contract CycleVaultxJOE is ERC20, ReentrancyGuard, Ownable, Pausable {
 
         uint256 balanceJOEbefore = balanceJOE();
         IJoeBar(xJOE).leave(amountxJOEforWithdraw);
-        uint256 amountJOEtoSwap = balanceJOE().sub(balanceJOEbefore);
+        uint256 amountJOEtoSwap = balanceJOE() - (balanceJOEbefore);
         IRouter(Router).swapExactTokensForTokens(amountJOEtoSwap, 0, JOEtoWAVAX, address(this), block.timestamp);
 
         uint256 balanceWAVAX = IERC20(WAVAX).balanceOf(address(this));
@@ -256,7 +254,7 @@ contract CycleVaultxJOE is ERC20, ReentrancyGuard, Ownable, Pausable {
 
         uint256 balancexJOEinVault = balancexJOE();
         if (balancexJOEinVault < amountxJOEforWithdraw) {
-            uint256 amountxJOEtoWithdrawFromMC = amountxJOEforWithdraw.sub(balancexJOEinVault);
+            uint256 amountxJOEtoWithdrawFromMC = amountxJOEforWithdraw - (balancexJOEinVault);
             IMasterChefV2(MasterChef).withdraw(poolID, amountxJOEtoWithdrawFromMC);
         }
     }
@@ -280,14 +278,14 @@ contract CycleVaultxJOE is ERC20, ReentrancyGuard, Ownable, Pausable {
     function _processFees() internal {
         uint256 reinvestBP = IStrategyVariables(StrategyVariables).harvestFeeBasisPoints();
         uint256 kickbackBP = IStrategyVariables(StrategyVariables).callFeeBasisPoints();
-        uint256 totalFeeBP = reinvestBP.add(kickbackBP);
+        uint256 totalFeeBP = reinvestBP + (kickbackBP);
 
-        uint256 amountJOEforFees = balanceJOE().mul(totalFeeBP).div(BP_DIV);
+        uint256 amountJOEforFees = balanceJOE() * (totalFeeBP) / (BP_DIV);
         IRouter(Router).swapExactTokensForTokens(amountJOEforFees, 0, JOEtoWAVAX, address(this), block.timestamp);
 
         uint256 balanceWAVAX = IERC20(WAVAX).balanceOf(address(this));
-        uint256 WAVAXforProcessor = balanceWAVAX.mul(reinvestBP).div(totalFeeBP);
-        uint256 WAVAXforCaller = balanceWAVAX.sub(WAVAXforProcessor);
+        uint256 WAVAXforProcessor = balanceWAVAX * (reinvestBP) / (totalFeeBP);
+        uint256 WAVAXforCaller = balanceWAVAX - (WAVAXforProcessor);
 
         address HarvestProcessor = IProtocolAddresses(ProtocolAddresses).HarvestProcessor();
         IERC20(WAVAX).safeTransfer(HarvestProcessor, WAVAXforProcessor);
