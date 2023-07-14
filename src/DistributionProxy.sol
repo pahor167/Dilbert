@@ -11,18 +11,9 @@ import "openzeppelin-contracts/security/ReentrancyGuard.sol";
 import "openzeppelin-contracts/security/Pausable.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 
-interface IProcessor {
-    function process() external;
-}
-
-interface IDistributor {
-    function distribute(address caller) external;
-}
-
-interface IProtocolAddresses {
-    function Distributor() external view returns (address);
-    function HarvestProcessor() external view returns (address);
-}
+import "./interfaces/IProcessor.sol";
+import "./interfaces/IDistributor.sol";
+import "./interfaces/IProtocolAddresses.sol";
 
 contract DistributionProxy is Ownable, ReentrancyGuard, Pausable {
     address public ProtocolAddresses;

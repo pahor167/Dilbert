@@ -7,6 +7,4 @@ interface IStrategy {
     function withdraw(uint256) external;
     function balanceLPinStrategy() external view returns (uint256);
     function decommissionStrategy() external;
-    function harvest() external;
-    function getRewardsEarned() external view returns (uint256);
 }

@@ -4,7 +4,7 @@
   "rules": {
     "compiler-version": ["off"],
     "constructor-syntax": "warn",
-    "quotes": ["error", "single"],
+    "quotes": ["error", "double"],
     "func-visibility": ["warn", { "ignoreConstructors": true }],
     "not-rely-on-time": "off",
     "func-name-mixedcase": "off",

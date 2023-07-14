@@ -5,11 +5,7 @@ pragma solidity ^0.8.13;
 import "openzeppelin-contracts/utils/Context.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 
-
-interface ICycle {
-    function setDistributor(address _Distributor) external;
-    function setScalingFactor(uint256 _scalingFactor) external;
-}
+import "./interfaces/ICycle.sol";
 
 contract CycleManager is Ownable {
     address public CYCLE = address(0x81440C939f2C1E34fc7048E518a637205A632a74);

@@ -11,9 +11,7 @@ import "openzeppelin-contracts/security/ReentrancyGuard.sol";
 import "openzeppelin-contracts/security/Pausable.sol";
 import "openzeppelin-contracts/access/Ownable.sol";
 
-interface IProtocolAddresses {
-    function Distributor() external view returns (address);
-}
+import "./interfaces/IProtocolAddresses.sol";
 
 /**
  * @title Cycle Core Rewards
